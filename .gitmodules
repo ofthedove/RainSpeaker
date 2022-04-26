@@ -1,0 +1,9 @@
+[submodule "RainSpeaker/lib/arduino-audioki"]
+	path = RainSpeaker/lib/arduino-audiokit
+	url = https://github.com/pschatzmann/arduino-audiokit.git
+[submodule "RainSpeaker/lib/arduino-audio-tools"]
+	path = RainSpeaker/lib/arduino-audio-tools
+	url = https://github.com/pschatzmann/arduino-audio-tools
+[submodule "RainSpeaker/lib/ESP32-A2DP"]
+	path = RainSpeaker/lib/ESP32-A2DP
+	url = https://github.com/pschatzmann/ESP32-A2DP.git
