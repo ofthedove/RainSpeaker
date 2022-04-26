@@ -9,11 +9,11 @@
 
 A2DPStream a2dp_in = A2DPStream::instance(); // A2DP input - A2DPStream is a singleton!
 AudioKitStream kit_out;
-StreamCopy copier(kit_out, a2dp_in); // copy in to out
+StreamCopy copier(kit_out, a2dp_in, 10000); // copy in to out
 
 void setup() {
   Serial.begin(115200);
-  AudioLogger::instance().begin(Serial, AudioLogger::Info);
+  // AudioLogger::instance().begin(Serial, AudioLogger::Info);
 
   // setup output
   auto cfg = kit_out.defaultConfig(TX_MODE);
