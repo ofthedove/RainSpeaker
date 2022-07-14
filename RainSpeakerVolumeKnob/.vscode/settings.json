@@ -1,0 +1,6 @@
+{
+    "files.associations": {
+        "cstdbool": "cpp"
+    }
+    "editor.formatOnSave": true
+}
