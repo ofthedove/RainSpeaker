@@ -50,9 +50,10 @@ void setup() {
   // setup output
   auto cfg = kit.defaultConfig(TX_MODE);
   kit.begin(cfg);
+  kit.setVolume(prevVol);
 
   // setup player
-  player.setVolume((float)prevVol / 100.0);
+  player.setVolume(1.0);
   player.begin();
 }
 
@@ -63,7 +64,7 @@ void loop() {
   uint16_t vol = *(uint16_t *)pCharacteristic->getData();
   if(vol != prevVol)
   {
-    player.setVolume((float)vol / 100.0);
+    kit.setVolume(vol);
     Serial.printf("Volume set to: %d", vol);
     prevVol = vol;
   }
