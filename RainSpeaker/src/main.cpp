@@ -32,6 +32,8 @@ void setup()
   kit.begin(cfg);
   kit.setVolume(100);
 
+  mySource->setTimeoutAutoNext(10);
+
   // setup player
   player.setVolume(0.7);
   player.begin();
