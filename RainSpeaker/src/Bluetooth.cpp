@@ -12,6 +12,8 @@ static BLERemoteCharacteristic *pRemoteCharacteristicEnc;
 static BLERemoteCharacteristic *pRemoteCharacteristicBtn;
 static BLEAdvertisedDevice *myDevice;
 
+extern int greenLedPin;
+
 Bluetooth::Bluetooth()
 {
 }
@@ -58,12 +60,14 @@ class MyClientCallback : public BLEClientCallbacks
 {
     void onConnect(BLEClient *pclient)
     {
+        digitalWrite(greenLedPin, HIGH);
     }
 
     void onDisconnect(BLEClient *pclient)
     {
         connected = false;
         Serial.println("onDisconnect");
+        digitalWrite(greenLedPin, LOW);
     }
 };
 

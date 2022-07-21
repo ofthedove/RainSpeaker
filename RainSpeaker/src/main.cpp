@@ -19,10 +19,14 @@ uint8_t volume;
 uint8_t prevVol;
 int actualVolume = 70;
 
+int greenLedPin = selfAudioKit->pinGreenLed();
+
 void setup()
 {
   Serial.begin(115200);
   // AudioLogger::instance().begin(Serial, AudioLogger::Info);
+
+  pinMode(greenLedPin, OUTPUT);
 
   bt.Init();
   bt.SetVolumePointer(&volume);
@@ -50,13 +54,6 @@ void loop()
     bt.Run();
 
     int delta = volume - prevVol;
-    Serial.print(volume);
-    Serial.print(" | ");
-    Serial.print(prevVol);
-    Serial.print(" | ");
-    Serial.print(delta);
-    Serial.print(" | ");
-
     prevVol = volume;
 
     if (delta > 128)
@@ -69,13 +66,7 @@ void loop()
       delta = delta + 256;
     }
 
-    Serial.print(delta);
-    Serial.print(" | ");
-
     actualVolume += delta;
-
-    Serial.print(actualVolume);
-    Serial.print(" | ");
 
     if (actualVolume < 0)
     {
@@ -87,11 +78,7 @@ void loop()
       actualVolume = 100;
     }
 
-    Serial.print(actualVolume);
-    Serial.print(" | ");
-
     float vol = (float)actualVolume / 100.0;
-    Serial.println(vol);
     player.setVolume(vol);
   }
 
