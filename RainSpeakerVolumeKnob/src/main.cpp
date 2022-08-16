@@ -14,10 +14,44 @@ using std::uint8_t;
 enum
 {
   ledBuiltinPin = LED_BUILTIN,
+  taskStackSize = 10000,
 };
 
 Encoder &encoder = Encoder::getInstance();
 Bluetooth bluetooth = Bluetooth();
+
+TaskHandle_t BleTaskHandle;
+TaskHandle_t HeartbeatLedTaskHandle;
+
+void BluetoothTask(void *parameter)
+{
+  (void)parameter;
+
+  while (true)
+  {
+    delay(200);
+
+    bool button = encoder.GetButton();
+    bluetooth.SetButton(button);
+
+    uint8_t position = encoder.GetPosition();
+    bluetooth.SetPosition(position);
+  }
+}
+
+void HeartbeatLedTask(void *parameter)
+{
+  (void)parameter;
+
+  while (true)
+  {
+    delay(500);
+
+    static bool state = false;
+    state = !state;
+    digitalWrite(ledBuiltinPin, state);
+  }
+}
 
 void setup()
 {
@@ -27,32 +61,13 @@ void setup()
 
   encoder.Init();
   bluetooth.Init();
+
+  xTaskCreate(BluetoothTask, "BLE Task", taskStackSize, NULL, 1, &BleTaskHandle);
+  xTaskCreate(HeartbeatLedTask, "Heartbeat LED Task", taskStackSize, NULL, 5, &HeartbeatLedTaskHandle);
 }
 
 void loop()
 {
   encoder.Run();
-
-  static bool prevButton = false;
-  static uint8_t prevPosition = 0;
-
-  bool button = encoder.GetButton();
-  uint8_t position = encoder.GetPosition();
-
-  if (prevButton != button || prevPosition != position)
-  {
-    Serial.print(button);
-    Serial.print("  ");
-    Serial.println(position);
-
-    bluetooth.SetButton(button);
-    bluetooth.SetPosition(position);
-
-    digitalWrite(ledBuiltinPin, button);
-
-    prevButton = button;
-    prevPosition = position;
-  }
-
   delay(50);
 }

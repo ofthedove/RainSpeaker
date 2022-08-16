@@ -27,12 +27,14 @@ void Bluetooth::Init()
     pCharacteristicEnc = pService->createCharacteristic(
         CHARACTERISTIC_UUID_ENC,
         BLECharacteristic::PROPERTY_READ |
+            BLECharacteristic::PROPERTY_NOTIFY |
             BLECharacteristic::PROPERTY_WRITE);
     pCharacteristicEnc->setValue(&zero, sizeof(zero));
 
     pCharacteristicBtn = pService->createCharacteristic(
         CHARACTERISTIC_UUID_BTN,
         BLECharacteristic::PROPERTY_READ |
+            BLECharacteristic::PROPERTY_NOTIFY |
             BLECharacteristic::PROPERTY_WRITE);
     pCharacteristicBtn->setValue(&zero, sizeof(zero));
 
@@ -49,10 +51,22 @@ void Bluetooth::Init()
 
 void Bluetooth::SetPosition(uint8_t position)
 {
-    pCharacteristicEnc->setValue(&position, sizeof(position));
+    static uint8_t prevPos = 0;
+    if (position != prevPos)
+    {
+        pCharacteristicEnc->setValue(&position, sizeof(position));
+        pCharacteristicEnc->notify();
+    }
+    prevPos = position;
 }
 
 void Bluetooth::SetButton(uint8_t button)
 {
-    pCharacteristicBtn->setValue(&button, sizeof(button));
+    static uint8_t prevBtn = 0;
+    if (button != prevBtn)
+    {
+        pCharacteristicBtn->setValue(&button, sizeof(button));
+        pCharacteristicBtn->notify();
+    }
+    prevBtn = button;
 }
