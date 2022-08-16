@@ -10,6 +10,12 @@
 enum
 {
   taskStackSize = 10000,
+  InitialVolume = 70,
+  VolumeFadeRate = 8,
+  VolumeChangeMultiplier = 2,
+
+  VolumeMin = 0,
+  VolumeMax = 100,
 };
 
 MySdAudioSource *mySource = new MySdAudioSource();
@@ -22,7 +28,8 @@ AudioPlayer player(*mySource, kit, decoder);
 Bluetooth bt = Bluetooth();
 uint8_t volume;
 uint8_t prevVol;
-int actualVolume = 70;
+int targetVolume = InitialVolume;
+int actualVolume = InitialVolume;
 
 int greenLedPin = selfAudioKit->pinGreenLed();
 
@@ -39,6 +46,18 @@ void BluetoothTask(void *parameter)
     delay(500);
 
     bt.Run();
+  }
+}
+
+static void Clamp(int min, int *value, int max)
+{
+  if (*value < min)
+  {
+    *value = min;
+  }
+  else if (*value > max)
+  {
+    *value = max;
   }
 }
 
@@ -65,16 +84,21 @@ void VolumeTask(void *parameter)
         delta = delta + 256;
       }
 
-      actualVolume += delta;
+      delta *= VolumeChangeMultiplier;
 
-      if (actualVolume < 0)
+      targetVolume += delta;
+
+      Clamp(VolumeMin, &targetVolume, VolumeMax);
+
+      if (targetVolume > actualVolume)
       {
-        actualVolume = 0;
+        actualVolume += VolumeFadeRate;
+        Clamp(VolumeMin, &actualVolume, targetVolume);
       }
-
-      if (actualVolume > 100)
+      else if (targetVolume < actualVolume)
       {
-        actualVolume = 100;
+        actualVolume -= VolumeFadeRate;
+        Clamp(targetVolume, &actualVolume, VolumeMax);
       }
 
       float vol = (float)actualVolume / 100.0;
