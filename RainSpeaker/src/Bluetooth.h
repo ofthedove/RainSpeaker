@@ -13,5 +13,4 @@ public:
     void SetPausePointer(bool *pause);
 
 private:
-    uint8_t *volumePtr;
 };

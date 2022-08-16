@@ -11,6 +11,7 @@ static bool doScan = false;
 static BLERemoteCharacteristic *pRemoteCharacteristicEnc;
 static BLERemoteCharacteristic *pRemoteCharacteristicBtn;
 static BLEAdvertisedDevice *myDevice;
+static uint8_t *volumePtr = NULL;
 
 extern int greenLedPin;
 
@@ -71,6 +72,18 @@ class MyClientCallback : public BLEClientCallbacks
     }
 };
 
+static void notifyCallback(
+    BLERemoteCharacteristic *pBLERemoteCharacteristic,
+    uint8_t *pData,
+    size_t length,
+    bool isNotify)
+{
+    if (volumePtr != NULL)
+    {
+        *volumePtr = *pData;
+    }
+}
+
 bool connectToServer()
 {
     Serial.print("Forming a connection to ");
@@ -120,8 +133,8 @@ bool connectToServer()
     }
 
     // Notify is currently not enabled on the server side
-    // if (pRemoteCharacteristicEnc->canNotify())
-    //     pRemoteCharacteristicEnc->registerForNotify(notifyCallback);
+    if (pRemoteCharacteristicEnc->canNotify())
+        pRemoteCharacteristicEnc->registerForNotify(notifyCallback);
 
     connected = true;
     return true;
@@ -144,8 +157,7 @@ void Bluetooth::Run()
 
     if (connected)
     {
-        uint8_t position = pRemoteCharacteristicEnc->readUInt8();
-        *volumePtr = position;
+        // do stuff (not doing anything b/c we're doing stuff in notify callbacks)
     }
     // else if (doScan)
     // {
