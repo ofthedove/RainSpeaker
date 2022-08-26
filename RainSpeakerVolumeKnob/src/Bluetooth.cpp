@@ -10,6 +10,23 @@
 
 using std::uint8_t;
 
+class MyServerCallbacks : public BLEServerCallbacks
+{
+    void onConnect(BLEServer *pServer)
+    {
+        // digitalWrite(greenLedPin, HIGH);
+        Serial.println("onConnect");
+    }
+
+    void onDisconnect(BLEServer *pServer)
+    {
+        // connected = false;
+        Serial.println("onDisconnect");
+        // digitalWrite(greenLedPin, LOW);
+        pServer->getAdvertising()->start();
+    }
+};
+
 Bluetooth::Bluetooth()
 {
 }
@@ -20,6 +37,7 @@ void Bluetooth::Init()
 
     BLEDevice::init("Rain Knob");
     BLEServer *pServer = BLEDevice::createServer();
+    pServer->setCallbacks(new MyServerCallbacks());
     BLEService *pService = pServer->createService(SERVICE_UUID);
 
     uint8_t zero = 0;
