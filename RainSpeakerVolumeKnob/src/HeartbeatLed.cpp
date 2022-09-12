@@ -3,7 +3,6 @@
 
 enum
 {
-    ledBuiltinPin = LED_BUILTIN,
     taskStackSize = 10000,
 };
 
@@ -20,7 +19,7 @@ void HeartbeatLedTask(void *parameter)
 
         case HeartbeatLedPattern::blink500:
             instance->state = !instance->state;
-            digitalWrite(ledBuiltinPin, !instance->state);
+            digitalWrite(instance->pin, !instance->state);
             break;
         }
 
@@ -46,10 +45,10 @@ void HeartbeatLed::SetPattern(HeartbeatLedPattern pattern)
     {
     case HeartbeatLedPattern::solidOn:
         state = true;
-        digitalWrite(ledBuiltinPin, !state);
+        digitalWrite(pin, !state);
     case HeartbeatLedPattern::blink500:
         state = !state;
-        digitalWrite(ledBuiltinPin, !state);
+        digitalWrite(pin, !state);
         break;
     }
 }
