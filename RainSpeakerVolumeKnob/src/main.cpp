@@ -44,8 +44,6 @@ void setup()
 {
   Serial.begin(115200);
 
-  pinMode(ledBuiltinPin, OUTPUT);
-
   encoder.Init();
   bluetooth.Init(&hbLed);
 

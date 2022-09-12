@@ -34,6 +34,8 @@ HeartbeatLed::HeartbeatLed(int pin)
     this->pattern = HeartbeatLedPattern::init;
     this->state = false;
 
+    pinMode(pin, OUTPUT);
+
     xTaskCreate(HeartbeatLedTask, "Heartbeat LED Task", taskStackSize, this, 5, &HeartbeatLedTaskHandle);
 }
 
