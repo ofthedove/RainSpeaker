@@ -1,3 +1,6 @@
+#ifndef ENCODER_H
+#define ENCODER_H
+
 #include <cstdint>
 
 using std::uint8_t;
@@ -25,3 +28,5 @@ public:
     Encoder(Encoder const &) = delete;
     void operator=(Encoder const &) = delete;
 };
+
+#endif

@@ -1,6 +1,7 @@
 #include <Arduino.h>
 #include "Bluetooth.h"
 #include "Encoder.h"
+#include "HeartbeatLed.h"
 
 #include <BLEDevice.h>
 #include <BLEUtils.h>
@@ -19,9 +20,9 @@ enum
 
 Encoder &encoder = Encoder::getInstance();
 Bluetooth bluetooth = Bluetooth();
+HeartbeatLed hbLed = HeartbeatLed(ledBuiltinPin);
 
 TaskHandle_t BleTaskHandle;
-TaskHandle_t HeartbeatLedTaskHandle;
 
 void BluetoothTask(void *parameter)
 {
@@ -39,20 +40,6 @@ void BluetoothTask(void *parameter)
   }
 }
 
-void HeartbeatLedTask(void *parameter)
-{
-  (void)parameter;
-
-  while (true)
-  {
-    delay(500);
-
-    static bool state = false;
-    state = !state;
-    digitalWrite(ledBuiltinPin, state);
-  }
-}
-
 void setup()
 {
   Serial.begin(115200);
@@ -60,10 +47,9 @@ void setup()
   pinMode(ledBuiltinPin, OUTPUT);
 
   encoder.Init();
-  bluetooth.Init();
+  bluetooth.Init(&hbLed);
 
   xTaskCreate(BluetoothTask, "BLE Task", taskStackSize, NULL, 1, &BleTaskHandle);
-  xTaskCreate(HeartbeatLedTask, "Heartbeat LED Task", taskStackSize, NULL, 5, &HeartbeatLedTaskHandle);
 }
 
 void loop()

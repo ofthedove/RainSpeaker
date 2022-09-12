@@ -10,19 +10,20 @@
 
 using std::uint8_t;
 
+static HeartbeatLed *led = NULL;
+
 class MyServerCallbacks : public BLEServerCallbacks
 {
     void onConnect(BLEServer *pServer)
     {
-        // digitalWrite(greenLedPin, HIGH);
+        led->SetPattern(HeartbeatLedPattern::solidOn);
         Serial.println("onConnect");
     }
 
     void onDisconnect(BLEServer *pServer)
     {
-        // connected = false;
+        led->SetPattern(HeartbeatLedPattern::blink500);
         Serial.println("onDisconnect");
-        // digitalWrite(greenLedPin, LOW);
         pServer->getAdvertising()->start();
     }
 };
@@ -31,8 +32,10 @@ Bluetooth::Bluetooth()
 {
 }
 
-void Bluetooth::Init()
+void Bluetooth::Init(HeartbeatLed *statusLed)
 {
+    led = statusLed;
+
     Serial.println("Starting BLE");
 
     BLEDevice::init("Rain Knob");
