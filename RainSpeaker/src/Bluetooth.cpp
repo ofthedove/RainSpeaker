@@ -5,8 +5,6 @@ static BLEUUID serviceUUID("ff149c8e-59bf-497d-a11f-d5af3128a195");
 static BLEUUID encCharUUID("be516360-2361-45e2-aa33-a157d48d7bc7");
 static BLEUUID btnCharUUID("6ba8bfa1-68f0-44dd-bdff-434016586344");
 
-// static bool doConnect = false;
-// static bool doScan = false;
 static BLERemoteCharacteristic *pRemoteCharacteristicEnc;
 static BLERemoteCharacteristic *pRemoteCharacteristicBtn;
 static BLEAdvertisedDevice *myDevice;
@@ -155,35 +153,6 @@ bool connectToServer()
 
 void Bluetooth::Run()
 {
-    if (scanning)
-    {
-        Serial.print("Scanning   ");
-    }
-    else
-    {
-        Serial.print("Not Scanning   ");
-    }
-
-    if (deviceFound)
-    {
-        Serial.print("Found   ");
-    }
-    else
-    {
-        Serial.print("Not Found   ");
-    }
-
-    if (connected)
-    {
-        Serial.print("Connected   ");
-    }
-    else
-    {
-        Serial.print("Not Connected   ");
-    }
-
-    Serial.println("");
-
     if (!scanning && !connected)
     {
         if (deviceFound)
@@ -196,18 +165,6 @@ void Bluetooth::Run()
             pBLEScan->start(5, OnScanComplete, false);
         }
     }
-    // if (doConnect == true)
-    // {
-    //     if (connectToServer())
-    //     {
-    //         Serial.println("We are now connected to the BLE Server.");
-    //     }
-    //     else
-    //     {
-    //         Serial.println("We have failed to connect to the server; there is nothin more we will do.");
-    //     }
-    //     doConnect = false;
-    // }
 }
 
 void Bluetooth::SetVolumePointer(uint8_t *volume)
