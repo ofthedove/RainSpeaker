@@ -5,18 +5,27 @@ static BLEUUID serviceUUID("ff149c8e-59bf-497d-a11f-d5af3128a195");
 static BLEUUID encCharUUID("be516360-2361-45e2-aa33-a157d48d7bc7");
 static BLEUUID btnCharUUID("6ba8bfa1-68f0-44dd-bdff-434016586344");
 
-static bool doConnect = false;
-static bool connected = false;
-static bool doScan = false;
+// static bool doConnect = false;
+// static bool doScan = false;
 static BLERemoteCharacteristic *pRemoteCharacteristicEnc;
 static BLERemoteCharacteristic *pRemoteCharacteristicBtn;
 static BLEAdvertisedDevice *myDevice;
+static BLEScan *pBLEScan;
 static uint8_t *volumePtr = NULL;
 
 static HeartbeatLed *led = NULL;
 
+static bool scanning = false;
+static bool deviceFound = false;
+static bool connected = false;
+
 Bluetooth::Bluetooth()
 {
+}
+
+void OnScanComplete(BLEScanResults results)
+{
+    scanning = false;
 }
 
 class MyAdvertisedDeviceCallbacks : public BLEAdvertisedDeviceCallbacks
@@ -33,8 +42,10 @@ class MyAdvertisedDeviceCallbacks : public BLEAdvertisedDeviceCallbacks
 
             BLEDevice::getScan()->stop();
             myDevice = new BLEAdvertisedDevice(advertisedDevice);
-            doConnect = true;
-            doScan = true;
+            deviceFound = true;
+
+            // Scan->stop() does not trigger OnComplete callback, must call manually
+            OnScanComplete(BLEScanResults());
         }
     }
 };
@@ -49,12 +60,14 @@ void Bluetooth::Init(HeartbeatLed *statusLed)
     // Retrieve a Scanner and set the callback we want to use to be informed when we
     // have detected a new device.  Specify that we want active scanning and start the
     // scan to run for 5 seconds.
-    BLEScan *pBLEScan = BLEDevice::getScan();
+    pBLEScan = BLEDevice::getScan();
     pBLEScan->setAdvertisedDeviceCallbacks(new MyAdvertisedDeviceCallbacks());
     pBLEScan->setInterval(1349);
     pBLEScan->setWindow(449);
     pBLEScan->setActiveScan(true);
-    pBLEScan->start(5, false);
+
+    scanning = true;
+    pBLEScan->start(5, OnScanComplete, false);
 
     Serial.println("Finished scanning");
 }
@@ -63,12 +76,15 @@ class MyClientCallback : public BLEClientCallbacks
 {
     void onConnect(BLEClient *pclient)
     {
+        connected = true;
+        Serial.println("onConnect");
         led->SetPattern(HeartbeatLedPattern::solidOn);
     }
 
     void onDisconnect(BLEClient *pclient)
     {
         connected = false;
+        deviceFound = false;
         Serial.println("onDisconnect");
         led->SetPattern(HeartbeatLedPattern::blink500);
     }
@@ -139,18 +155,59 @@ bool connectToServer()
 
 void Bluetooth::Run()
 {
-    if (doConnect == true)
+    if (scanning)
     {
-        if (connectToServer())
+        Serial.print("Scanning   ");
+    }
+    else
+    {
+        Serial.print("Not Scanning   ");
+    }
+
+    if (deviceFound)
+    {
+        Serial.print("Found   ");
+    }
+    else
+    {
+        Serial.print("Not Found   ");
+    }
+
+    if (connected)
+    {
+        Serial.print("Connected   ");
+    }
+    else
+    {
+        Serial.print("Not Connected   ");
+    }
+
+    Serial.println("");
+
+    if (!scanning && !connected)
+    {
+        if (deviceFound)
         {
-            Serial.println("We are now connected to the BLE Server.");
+            connectToServer();
         }
         else
         {
-            Serial.println("We have failed to connect to the server; there is nothin more we will do.");
+            scanning = true;
+            pBLEScan->start(5, OnScanComplete, false);
         }
-        doConnect = false;
     }
+    // if (doConnect == true)
+    // {
+    //     if (connectToServer())
+    //     {
+    //         Serial.println("We are now connected to the BLE Server.");
+    //     }
+    //     else
+    //     {
+    //         Serial.println("We have failed to connect to the server; there is nothin more we will do.");
+    //     }
+    //     doConnect = false;
+    // }
 }
 
 void Bluetooth::SetVolumePointer(uint8_t *volume)
