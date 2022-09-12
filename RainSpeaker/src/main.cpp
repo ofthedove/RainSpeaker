@@ -4,6 +4,7 @@
 #include "AudioKitHAL.h"
 #include "SPI.h"
 #include "SD_MMC.h"
+#include "HeartbeatLed.h"
 
 #include "MyAudioPlayer.h"
 
@@ -31,7 +32,7 @@ uint8_t prevVol;
 int targetVolume = InitialVolume;
 int actualVolume = InitialVolume;
 
-int greenLedPin = selfAudioKit->pinGreenLed();
+HeartbeatLed hbLed = HeartbeatLed(selfAudioKit->pinGreenLed());
 
 TaskHandle_t BleTaskHandle;
 TaskHandle_t VolumeTaskHandle;
@@ -125,9 +126,7 @@ void setup()
   Serial.begin(115200);
   // AudioLogger::instance().begin(Serial, AudioLogger::Info);
 
-  pinMode(greenLedPin, OUTPUT);
-
-  bt.Init();
+  bt.Init(&hbLed);
   bt.SetVolumePointer(&volume);
 
   // setup output

@@ -13,7 +13,7 @@ static BLERemoteCharacteristic *pRemoteCharacteristicBtn;
 static BLEAdvertisedDevice *myDevice;
 static uint8_t *volumePtr = NULL;
 
-extern int greenLedPin;
+static HeartbeatLed *led = NULL;
 
 Bluetooth::Bluetooth()
 {
@@ -39,8 +39,10 @@ class MyAdvertisedDeviceCallbacks : public BLEAdvertisedDeviceCallbacks
     }
 };
 
-void Bluetooth::Init()
+void Bluetooth::Init(HeartbeatLed *statusLed)
 {
+    led = statusLed;
+
     Serial.println("Starting Arduino BLE Client application...");
     BLEDevice::init("");
 
@@ -61,14 +63,14 @@ class MyClientCallback : public BLEClientCallbacks
 {
     void onConnect(BLEClient *pclient)
     {
-        digitalWrite(greenLedPin, HIGH);
+        led->SetPattern(HeartbeatLedPattern::solidOn);
     }
 
     void onDisconnect(BLEClient *pclient)
     {
         connected = false;
         Serial.println("onDisconnect");
-        digitalWrite(greenLedPin, LOW);
+        led->SetPattern(HeartbeatLedPattern::blink500);
     }
 };
 
@@ -124,19 +126,14 @@ bool connectToServer()
     // Read the value of the characteristic.
     if (pRemoteCharacteristicEnc->canRead())
     {
-        // std::string value = pRemoteCharacteristicEnc->readValue();
-        // Serial.print("The characteristic value was: ");
-        // Serial.println(value.c_str());
         uint8_t value = pRemoteCharacteristicEnc->readUInt8();
         Serial.print("The characteristic value was: ");
         Serial.println(value);
     }
 
-    // Notify is currently not enabled on the server side
     if (pRemoteCharacteristicEnc->canNotify())
         pRemoteCharacteristicEnc->registerForNotify(notifyCallback);
 
-    connected = true;
     return true;
 }
 
@@ -154,15 +151,6 @@ void Bluetooth::Run()
         }
         doConnect = false;
     }
-
-    if (connected)
-    {
-        // do stuff (not doing anything b/c we're doing stuff in notify callbacks)
-    }
-    // else if (doScan)
-    // {
-    //     BLEDevice::getScan()->start(0); // this is just example to start scan after disconnect, most likely there is better way to do it in arduino
-    // }
 }
 
 void Bluetooth::SetVolumePointer(uint8_t *volume)
