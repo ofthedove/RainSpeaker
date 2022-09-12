@@ -2,21 +2,18 @@
 #include "AudioTools.h"
 #include "AudioLibs/AudioKit.h"
 #include "AudioKitHAL.h"
+#include "Bluetooth.h"
+#include "HeartbeatLed.h"
+#include "MyAudioPlayer.h"
 #include "SPI.h"
 #include "SD_MMC.h"
-#include "HeartbeatLed.h"
+#include "VolumeManager.h"
 
-#include "MyAudioPlayer.h"
+using std::uint8_t;
 
 enum
 {
   taskStackSize = 10000,
-  InitialVolume = 70,
-  VolumeFadeRate = 8,
-  VolumeChangeMultiplier = 2,
-
-  VolumeMin = 0,
-  VolumeMax = 100,
 };
 
 MySdAudioSource *mySource = new MySdAudioSource();
@@ -24,21 +21,27 @@ AudioKitStream kit;
 WAVDecoder decoder;
 AudioPlayer player(*mySource, kit, decoder);
 
-#include "Bluetooth.h"
-
 Bluetooth bt = Bluetooth();
-uint8_t volume;
-uint8_t prevVol;
-int targetVolume = InitialVolume;
-int actualVolume = InitialVolume;
-
 HeartbeatLed hbLed = HeartbeatLed(selfAudioKit->pinGreenLed());
 
 TaskHandle_t BleTaskHandle;
-TaskHandle_t VolumeTaskHandle;
 TaskHandle_t AudioTaskHandle;
 
-void BluetoothTask(void *parameter)
+// This kinda sucks but passing a pointer to player requires a second include
+//    of `AudioTools.h` which breaks linking. I blame the library.
+static void SetPlayerVolume(float volume)
+{
+  player.setVolume(volume);
+}
+
+VolumeManager volumeManager = VolumeManager(SetPlayerVolume);
+
+static void BluetoothVolumeCallback(uint8_t rawVolume)
+{
+  volumeManager.UpdateRawVolumeInput(rawVolume);
+}
+
+static void BluetoothTask(void *parameter)
 {
   (void)parameter;
 
@@ -50,65 +53,7 @@ void BluetoothTask(void *parameter)
   }
 }
 
-static void Clamp(int min, int *value, int max)
-{
-  if (*value < min)
-  {
-    *value = min;
-  }
-  else if (*value > max)
-  {
-    *value = max;
-  }
-}
-
-void VolumeTask(void *parameter)
-{
-  (void)parameter;
-
-  while (true)
-  {
-    delay(50);
-
-    int delta = volume - prevVol;
-    if (delta != 0)
-    {
-      prevVol = volume;
-
-      if (delta > 128)
-      {
-        delta = delta - 256;
-      }
-
-      if (delta < -128)
-      {
-        delta = delta + 256;
-      }
-
-      delta *= VolumeChangeMultiplier;
-
-      targetVolume += delta;
-
-      Clamp(VolumeMin, &targetVolume, VolumeMax);
-
-      if (targetVolume > actualVolume)
-      {
-        actualVolume += VolumeFadeRate;
-        Clamp(VolumeMin, &actualVolume, targetVolume);
-      }
-      else if (targetVolume < actualVolume)
-      {
-        actualVolume -= VolumeFadeRate;
-        Clamp(targetVolume, &actualVolume, VolumeMax);
-      }
-
-      float vol = (float)actualVolume / 100.0;
-      player.setVolume(vol);
-    }
-  }
-}
-
-void AudioTask(void *parameter)
+static void AudioTask(void *parameter)
 {
   (void)parameter;
 
@@ -127,7 +72,7 @@ void setup()
   // AudioLogger::instance().begin(Serial, AudioLogger::Info);
 
   bt.Init(&hbLed);
-  bt.SetVolumePointer(&volume);
+  bt.SetVolumeCallback(BluetoothVolumeCallback);
 
   // setup output
   auto cfg = kit.defaultConfig(TX_MODE);
@@ -141,7 +86,6 @@ void setup()
   player.begin();
 
   xTaskCreate(BluetoothTask, "BLE Task", taskStackSize, NULL, 3, &BleTaskHandle);
-  xTaskCreate(VolumeTask, "Volume Task", taskStackSize, NULL, 2, &VolumeTaskHandle);
   xTaskCreate(AudioTask, "Audio Task", taskStackSize, NULL, 5, &AudioTaskHandle);
 }
 

@@ -1,3 +1,6 @@
+#ifndef BLUETOOTH_H
+#define BLUETOOTH_H
+
 #include "BLEDevice.h"
 #include "HeartbeatLed.h"
 
@@ -10,8 +13,10 @@ public:
 
     void Init(HeartbeatLed *statusLed);
     void Run();
-    void SetVolumePointer(uint8_t *volume);
+    void SetVolumeCallback(void (*callback)(uint8_t vol));
     void SetPausePointer(bool *pause);
 
 private:
 };
+
+#endif

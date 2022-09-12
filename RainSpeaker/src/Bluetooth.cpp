@@ -9,7 +9,7 @@ static BLERemoteCharacteristic *pRemoteCharacteristicEnc;
 static BLERemoteCharacteristic *pRemoteCharacteristicBtn;
 static BLEAdvertisedDevice *myDevice;
 static BLEScan *pBLEScan;
-static uint8_t *volumePtr = NULL;
+static void (*volumeCallback)(uint8_t vol);
 
 static HeartbeatLed *led = NULL;
 
@@ -94,9 +94,9 @@ static void notifyCallback(
     size_t length,
     bool isNotify)
 {
-    if (volumePtr != NULL)
+    if (volumeCallback != NULL)
     {
-        *volumePtr = *pData;
+        volumeCallback(*pData);
     }
 }
 
@@ -167,9 +167,9 @@ void Bluetooth::Run()
     }
 }
 
-void Bluetooth::SetVolumePointer(uint8_t *volume)
+void Bluetooth::SetVolumeCallback(void (*callback)(uint8_t vol))
 {
-    volumePtr = volume;
+    volumeCallback = callback;
 }
 
 void Bluetooth::SetPausePointer(bool *pause)
