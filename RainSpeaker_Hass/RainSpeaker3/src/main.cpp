@@ -46,6 +46,12 @@ IPAddress mqtt_server(192, 168, 0, 15);
 const char* ssid = "Shortening";
 const char* password = "ThiaIsAwesome";
 
+WiFiClient espClient;
+PubSubClient client(espClient); //lib required for mqtt
+
+int volume = 0;
+
+
 void callback(char* topic, byte* payload, unsigned int length) {
   Serial.print("Message arrived [");
   Serial.print(topic);
@@ -54,12 +60,38 @@ void callback(char* topic, byte* payload, unsigned int length) {
     Serial.print((char)payload[i]);
   }
   Serial.println();
+
+  char payloadString[20] = {0};
+  for (int i=0;i<length && i<19;i++) {
+    payloadString[i] = (char)payload[i];
+  }
+
+  if(strcmp(topic, "memyself/rainSpeaker3/volumeStatus") == 0)
+  {
+    client.unsubscribe("memyself/rainSpeaker3/volumeStatus");
+    volume = atoi(payloadString);
+  }
+
+  if(strcmp(topic, "memyself/rainSpeaker3/volumeCommand") == 0)
+  {
+    volume = atoi(payloadString);
+    client.publish("memyself/rainSpeaker3/volumeStatus", payloadString, true);
+  }
+
+  // if(length > 0)
+  // {
+
+  //   // snprintf(myString, sizeof(myString), "Volume %i", payload[0]);
+  //   client.publish("memyself/rainSpeaker3/volumeStatus", myString, true);
+
+  //   Serial.print("length: ");
+  //   Serial.println(length);
+  //   Serial.print("sending: ");
+  //   Serial.println(myString);
+  // }
+  Serial.print("Volume is: ");
+  Serial.println(volume);
 }
-
-WiFiClient espClient;
-PubSubClient client(espClient); //lib required for mqtt
-
-int LED = 19;
 
 // void callback(char* topic, byte* payload, unsigned int length) {   //callback includes topic and payload ( from which (topic) the payload is comming)
 //   Serial.print("Message arrived [");
@@ -132,9 +164,10 @@ void reconnect() {
     if (client.connect("arduinoClient", "mqttuser", "h\%D^2f#AQk")) {
       Serial.println("connected");
       // Once connected, publish an announcement...
-      client.publish("outTopic","hello world");
+      // client.publish("outTopic","hello world");
       // ... and resubscribe
-      client.subscribe("inTopic");
+      client.subscribe("memyself/rainSpeaker3/volumeCommand");
+      client.subscribe("memyself/rainSpeaker3/volumeStatus");
     } else {
       Serial.print("failed, rc=");
       Serial.print(client.state());
@@ -150,6 +183,8 @@ void setup()
   Serial.begin(115200);
   // pinMode(LED, OUTPUT);
   // digitalWrite(LED, LOW);
+
+  pinMode(19, INPUT);
 
   Serial.println("connecting wifi...");
 
@@ -176,4 +211,52 @@ void loop()
   }
 
   client.loop();
+
+  delay(1);
+
+// static int count = 0;
+// count++;
+// if (count > 500)
+// {
+//   count = 0;
+
+//   static int innerCount = 0;
+//   innerCount++;
+//   innerCount = innerCount % 10;
+//   char myString[20] = {0};
+//   snprintf(myString, sizeof(myString), "test %d", innerCount);
+//   client.publish("memyself/rainSpeaker3/button",myString);
+// }
+
+  static uint8_t count = 0;
+  static bool prev = true;
+  bool pin = digitalRead(19);
+  if(pin == prev)
+  {
+    if(count < 200)
+    {
+      count++;
+    }
+    else if (count == 200)
+    {
+      count++;
+      if(pin)
+      {
+        client.publish("memyself/rainSpeaker3/button","release");
+      }
+      else
+      {
+        client.publish("memyself/rainSpeaker3/button","press");
+      }
+    }
+    else
+    {
+      // do nothing, wait for change
+    }
+  }
+  else
+  {
+    count = 0;
+  }
+  prev = pin;
 }
