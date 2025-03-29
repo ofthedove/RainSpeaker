@@ -4,6 +4,9 @@
 #include <WebServer.h>
 #include <PubSubClient.h>
 
+// TODO: Default volume to 0, wait for server to set it
+// If we never connect to server, eventually set it to 1.
+
 Audio *audio;
 
 IPAddress mqtt_server(192, 168, 0, 15);
@@ -28,32 +31,28 @@ void callback(char* topic, byte* payload, unsigned int length) {
     payloadString[i] = (char)payload[i];
   }
 
+  bool setVolumeFlag = false;
+
   if(strcmp(topic, "memyself/rainSpeaker3/volumeStatus") == 0)
   {
     client.unsubscribe("memyself/rainSpeaker3/volumeStatus");
-    volume = atoi(payloadString);
+    setVolumeFlag = true;
   }
 
   if(strcmp(topic, "memyself/rainSpeaker3/volumeCommand") == 0)
   {
-    volume = atoi(payloadString);
     client.publish("memyself/rainSpeaker3/volumeStatus", payloadString, true);
+    setVolumeFlag = true;
   }
 
-  Serial.print("Volume is: ");
-  Serial.println(volume);
-
-  if(i2s.hasBoard())
+  if(setVolumeFlag)
   {
-    AudioBoard &board = i2s.board();
-    board.setVolume(volume);
-  }
+    int volume = atoi(payloadString);
+    audio->setVolume(volume);
 
-  // Haven't actually tested this \/ found out I could do that ^ and avoid float
-  // float stupidFloatVolumeBcAudioKitIsDumb = (float)volume / 100.0;
-  // float v = stupidFloatVolumeBcAudioKitIsDumb;
-  // float clamped = v < 0.0 ? 0.0 : (v > 1.0 ? 1.0 : v);
-  // i2s.setVolume(clamped);
+    Serial.print("Volume is: ");
+    Serial.println(volume);
+  }
 }
 
 void reconnect() {
@@ -77,24 +76,8 @@ void reconnect() {
 
 void setup()
 {
-  audio = new Audio();
-
   Serial.begin(115200);
-  AudioToolsLogger.begin(Serial, AudioToolsLogLevel::Warning);
-
-  // setup audiokit before SD!
-  auto config = i2s.defaultConfig(TX_MODE);
-  config.sd_active = true;
-  i2s.begin(config);
-  i2s.setVolume(1.0);
-
-  // setup file
-  SD.begin(chipSelect, SPI, 10000000);
-  loopingFile.setFile(SD.open("/RAINLP1.WAV"));
-  loopingFile.begin();
-
-  // setup I2S based on sampling rate provided by decoder
-  decoder.begin();
+  audio = new Audio(Serial);
 
   // ---
 

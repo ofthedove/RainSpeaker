@@ -11,18 +11,18 @@
 class Audio {
 private:
     const int chipSelect=PIN_AUDIO_KIT_SD_CARD_CS;
-    AudioBoardStream i2s(AudioKitEs8388V1); // final output of decoded stream
+    AudioBoardStream *i2s; // final output of decoded stream
     WAVDecoder wav;
-    EncodedAudioStream decoder(&i2s, &wav); // Decoding stream
+    EncodedAudioStream *decoder; // Decoding stream
     FileLoop loopingFile;
-    StreamCopy copier(decoder, loopingFile, 4096);
+    StreamCopy *copier;
 public:
-   Audio();
+   Audio(Print& logPrint);
 
    ~Audio();
 
    void loop();
-   void setVolume(int volume)
+   void setVolume(int volume);
 };
 
 #endif
