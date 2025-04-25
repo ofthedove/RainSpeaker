@@ -2,8 +2,6 @@
 #ifndef Audio_h
 #define Audio_h
 
-#include <SPI.h>
-#include <SD.h>
 #include "AudioTools.h"
 #include "AudioTools/AudioLibs/AudioBoardStream.h"
 #include "AudioTools/Disk/FileLoop.h"

@@ -1,8 +1,19 @@
 #include "Audio.h"
 
+#ifdef BOARD_LYRAT
+#include "SD_MMC.h"
+#else /* BOARD_AUDIOKIT_ES8388V1 */
+#include <SPI.h>
+#include <SD.h>
+#endif
+
 Audio::Audio(Print& logPrint)
 {
+#ifdef BOARD_LYRAT
+    i2s = new AudioBoardStream(LyratV43);
+#else /* BOARD_AUDIOKIT_ES8388V1 */
     i2s = new AudioBoardStream(AudioKitEs8388V1); // final output of decoded stream
+#endif
     decoder = new EncodedAudioStream(i2s, &wav); // Decoding stream
     copier = new StreamCopy(*decoder, loopingFile, 4096);
 
@@ -16,8 +27,13 @@ Audio::Audio(Print& logPrint)
     i2s->setVolume(0.5);
 
     // setup file
+#ifdef BOARD_LYRAT
+    SD_MMC.begin("/sdcard", true);
+    loopingFile.setFile(SD_MMC.open("/RAINLP1.WAV"));
+#else /* BOARD_AUDIOKIT_ES8388V1 */
     SD.begin(chipSelect, SPI, 10000000);
     loopingFile.setFile(SD.open("/RAINLP1.WAV"));
+#endif
     loopingFile.begin();
 
     // setup I2S based on sampling rate provided by decoder

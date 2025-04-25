@@ -4,6 +4,16 @@
 #include <WebServer.h>
 #include <PubSubClient.h>
 
+#define TOPIC_VOLUMESTATUS "volumeStatus"
+#define TOPIC_VOLUMECOMMAND "volumeCommand"
+#define TOPIC_PLAYSTATUS "plabyackStatus"
+#define TOPIC_PLAYCOMMAND "plabyackCommand"
+
+#define VOLUME_STATUS TOPIC_MANUFACTURER "/" TOPIC_DEVICE "/" TOPIC_VOLUMESTATUS
+#define VOLUME_COMMAND TOPIC_MANUFACTURER "/" TOPIC_DEVICE "/" TOPIC_VOLUMECOMMAND
+#define PLAY_STATUS TOPIC_MANUFACTURER "/" TOPIC_DEVICE "/" TOPIC_PLAYSTATUS
+#define PLAY_COMMAND TOPIC_MANUFACTURER "/" TOPIC_DEVICE "/" TOPIC_PLAYCOMMAND
+
 // TODO: Default volume to 0, wait for server to set it
 // If we never connect to server, eventually set it to 1.
 
@@ -13,6 +23,14 @@ IPAddress mqtt_server(192, 168, 0, 15);
 
 const char* ssid = "Shortening";
 const char* password = "ThiaIsAwesome";
+
+const char* mqttUser = "mqttuser";
+const char* mqttPass = "h\%D^2f#AQk";
+
+const char* topicVolumeStatus = VOLUME_STATUS;
+const char* topicVolumeCommand = VOLUME_COMMAND;
+const char* topicPlaybackStatus = PLAY_STATUS;
+const char* topicPlaybackCommand = PLAY_COMMAND;
 
 WiFiClient espClient;
 PubSubClient client(espClient); //lib required for mqtt
@@ -33,15 +51,15 @@ void callback(char* topic, byte* payload, unsigned int length) {
 
   bool setVolumeFlag = false;
 
-  if(strcmp(topic, "memyself/rainSpeaker3/volumeStatus") == 0)
+  if(strcmp(topic, topicVolumeStatus) == 0)
   {
-    client.unsubscribe("memyself/rainSpeaker3/volumeStatus");
+    client.unsubscribe(topicVolumeStatus);
     setVolumeFlag = true;
   }
 
-  if(strcmp(topic, "memyself/rainSpeaker3/volumeCommand") == 0)
+  if(strcmp(topic, topicVolumeCommand) == 0)
   {
-    client.publish("memyself/rainSpeaker3/volumeStatus", payloadString, true);
+    client.publish(topicVolumeStatus, payloadString, true);
     setVolumeFlag = true;
   }
 
@@ -60,10 +78,10 @@ void reconnect() {
   while (!client.connected()) {
     Serial.print("Attempting MQTT connection...");
     // Attempt to connect
-    if (client.connect("arduinoClient", "mqttuser", "h\%D^2f#AQk")) {
+    if (client.connect("arduinoClient", mqttUser, mqttPass)) {
       Serial.println("connected");
-      client.subscribe("memyself/rainSpeaker3/volumeCommand");
-      client.subscribe("memyself/rainSpeaker3/volumeStatus");
+      client.subscribe(topicVolumeCommand);
+      client.subscribe(topicVolumeStatus);
     } else {
       Serial.print("failed, rc=");
       Serial.print(client.state());
