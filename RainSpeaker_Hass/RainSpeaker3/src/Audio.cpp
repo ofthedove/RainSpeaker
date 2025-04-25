@@ -13,7 +13,7 @@ Audio::Audio(Print& logPrint)
     auto config = i2s->defaultConfig(TX_MODE);
     config.sd_active = true;
     i2s->begin(config);
-    i2s->setVolume(1.0);
+    i2s->setVolume(0.5);
 
     // setup file
     SD.begin(chipSelect, SPI, 10000000);
