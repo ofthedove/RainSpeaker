@@ -18,13 +18,20 @@ Audio::Audio(Print& logPrint)
     copier = new StreamCopy(*decoder, loopingFile, 4096);
 
     // Must be Warning or above! Info and Debug cause stuttering audio output
-    AudioToolsLogger.begin(logPrint, AudioToolsLogLevel::Warning);
+    AudioToolsLogger.begin(logPrint, AudioToolsLogLevel::Info);
 
     // setup audiokit before SD!
     auto config = i2s->defaultConfig(TX_MODE);
     config.sd_active = true;
     i2s->begin(config);
     i2s->setVolume(0.5);
+
+#ifdef BOARD_LYRAT
+    // Need to turn amp on and off see https://www.pschatzmann.ch/home/2024/11/03/the-lyrat-mini-board-is-supported-now-as-well/
+    i2s->addHeadphoneDetectionAction();
+#else /* BOARD_AUDIOKIT_ES8388V1 */
+#endif
+
 
     // setup file
 #ifdef BOARD_LYRAT
@@ -46,6 +53,7 @@ Audio::~Audio() {
 
 void Audio::loop() {
     copier->copy();
+    i2s->processActions();
 }
 
 void Audio::setVolume(int volume) {
@@ -58,9 +66,11 @@ void Audio::setVolume(int volume) {
         volume = 100;
     }
 
-    if(i2s->hasBoard())
-    {
-      AudioBoard &board = i2s->board();
-      board.setVolume(volume);
-    }
+    i2s->setVolume((float)volume / 100.0);
+
+    // if(i2s->hasBoard())
+    // {
+    //   AudioBoard &board = i2s->board();
+    //   board.setVolume(volume);
+    // }
 }

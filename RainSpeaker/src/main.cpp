@@ -21,7 +21,7 @@ AudioKitStream kit;
 WAVDecoder decoder;
 AudioPlayer player(*mySource, kit, decoder);
 
-Bluetooth bt = Bluetooth();
+// Bluetooth bt = Bluetooth();
 HeartbeatLed hbLed = HeartbeatLed(selfAudioKit->pinGreenLed());
 
 TaskHandle_t BleTaskHandle;
@@ -36,22 +36,22 @@ static void SetPlayerVolume(float volume)
 
 VolumeManager volumeManager = VolumeManager(SetPlayerVolume);
 
-static void BluetoothVolumeCallback(uint8_t rawVolume)
-{
-  volumeManager.UpdateRawVolumeInput(rawVolume);
-}
+// static void BluetoothVolumeCallback(uint8_t rawVolume)
+// {
+//   volumeManager.UpdateRawVolumeInput(rawVolume);
+// }
 
-static void BluetoothTask(void *parameter)
-{
-  (void)parameter;
+// static void BluetoothTask(void *parameter)
+// {
+//   (void)parameter;
 
-  while (true)
-  {
-    delay(500);
+//   while (true)
+//   {
+//     delay(500);
 
-    bt.Run();
-  }
-}
+//     bt.Run();
+//   }
+// }
 
 static void AudioTask(void *parameter)
 {
@@ -71,8 +71,8 @@ void setup()
   Serial.begin(115200);
   // AudioLogger::instance().begin(Serial, AudioLogger::Info);
 
-  bt.Init(&hbLed);
-  bt.SetVolumeCallback(BluetoothVolumeCallback);
+  // bt.Init(&hbLed);
+  // bt.SetVolumeCallback(BluetoothVolumeCallback);
 
   // setup output
   auto cfg = kit.defaultConfig(TX_MODE);
@@ -85,7 +85,7 @@ void setup()
   player.setVolume(0.7);
   player.begin();
 
-  xTaskCreate(BluetoothTask, "BLE Task", taskStackSize, NULL, 3, &BleTaskHandle);
+  // xTaskCreate(BluetoothTask, "BLE Task", taskStackSize, NULL, 3, &BleTaskHandle);
   xTaskCreate(AudioTask, "Audio Task", taskStackSize, NULL, 5, &AudioTaskHandle);
 }
 
