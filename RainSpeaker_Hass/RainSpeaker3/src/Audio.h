@@ -4,16 +4,21 @@
 
 #include "AudioTools.h"
 #include "AudioTools/AudioLibs/AudioBoardStream.h"
-#include "AudioTools/Disk/FileLoop.h"
+// #include "AudioTools/Disk/FileLoop.h"
+#include "AudioTools/Disk/AudioSourceSDMMC.h"
+#include "AudioTools/AudioCodecs/CodecWAV.h"
 
 class Audio {
 private:
     const int chipSelect=PIN_AUDIO_KIT_SD_CARD_CS;
-    AudioBoardStream *i2s; // final output of decoded stream
-    WAVDecoder wav;
-    EncodedAudioStream *decoder; // Decoding stream
-    FileLoop loopingFile;
-    StreamCopy *copier;
+    AudioBoardStream *kit; // final output of decoded stream
+    WAVDecoder *decoder;
+    // EncodedAudioStream *decoder; // Decoding stream
+    // FileLoop loopingFile;
+    // StreamCopy *copier;
+    AudioSourceSDMMC *source;
+    AudioPlayer *player;
+
 public:
    Audio(Print& logPrint);
 
