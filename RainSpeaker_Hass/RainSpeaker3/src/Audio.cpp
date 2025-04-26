@@ -10,25 +10,28 @@
 Audio::Audio(Print& logPrint)
 {
 #ifdef BOARD_LYRAT
-    i2s = new AudioBoardStream(LyratV43);
+    kit = new AudioBoardStream(LyratV43);
 #else /* BOARD_AUDIOKIT_ES8388V1 */
-    i2s = new AudioBoardStream(AudioKitEs8388V1); // final output of decoded stream
+    kit = new AudioBoardStream(AudioKitEs8388V1); // final output of decoded stream
 #endif
-    decoder = new EncodedAudioStream(i2s, &wav); // Decoding stream
+    decoder = new EncodedAudioStream(kit, &wav); // Decoding stream
     copier = new StreamCopy(*decoder, loopingFile, 4096);
 
     // Must be Warning or above! Info and Debug cause stuttering audio output
-    AudioToolsLogger.begin(logPrint, AudioToolsLogLevel::Info);
+    // For debugging, set to Info (or Debug)
+    // At info, you can add -DCOPY_LOG_OFF to get better debug with little/no stutter
+    // To get driver level debug, you must modify ConfigAudioDriver.h to define debug level as 0
+    AudioToolsLogger.begin(logPrint, AudioToolsLogLevel::Warning);
 
     // setup audiokit before SD!
-    auto config = i2s->defaultConfig(TX_MODE);
+    auto config = kit->defaultConfig(TX_MODE);
     config.sd_active = true;
-    i2s->begin(config);
-    i2s->setVolume(0.5);
+    kit->begin(config);
+    kit->setVolume(0.5);
 
 #ifdef BOARD_LYRAT
     // Need to turn amp on and off see https://www.pschatzmann.ch/home/2024/11/03/the-lyrat-mini-board-is-supported-now-as-well/
-    i2s->addHeadphoneDetectionAction();
+    kit->addHeadphoneDetectionAction();
 #else /* BOARD_AUDIOKIT_ES8388V1 */
 #endif
 
@@ -53,7 +56,7 @@ Audio::~Audio() {
 
 void Audio::loop() {
     copier->copy();
-    i2s->processActions();
+    kit->processActions();
 }
 
 void Audio::setVolume(int volume) {
@@ -66,11 +69,12 @@ void Audio::setVolume(int volume) {
         volume = 100;
     }
 
-    i2s->setVolume((float)volume / 100.0);
-
-    // if(i2s->hasBoard())
-    // {
-    //   AudioBoard &board = i2s->board();
-    //   board.setVolume(volume);
-    // }
+    // kit->setVolume((float)volume / 100.0);
+    // Instead of doing a float division just for kit to multiply it back,
+    //   directly access the board pointer and set the integer volume
+    if(kit->hasBoard())
+    {
+      AudioBoard &board = kit->board();
+      board.setVolume(volume);
+    }
 }

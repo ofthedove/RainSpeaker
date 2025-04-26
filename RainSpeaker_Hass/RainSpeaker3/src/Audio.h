@@ -9,7 +9,7 @@
 class Audio {
 private:
     const int chipSelect=PIN_AUDIO_KIT_SD_CARD_CS;
-    AudioBoardStream *i2s; // final output of decoded stream
+    AudioBoardStream *kit; // final output of decoded stream
     WAVDecoder wav;
     EncodedAudioStream *decoder; // Decoding stream
     FileLoop loopingFile;
