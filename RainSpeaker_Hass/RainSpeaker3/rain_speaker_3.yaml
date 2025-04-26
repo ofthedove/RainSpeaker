@@ -6,12 +6,12 @@ mqtt:
   # - MQTT Numbers
   # - =========================================
   number:
-    - name: Rain Speaker 3 Volume
+    - name: Volume
       unique_id: rain_speaker_3_volume
-      command_topic: "memyself/rainSpeaker3/volumeCommand"
+      command_topic: "memyself/rainSpeaker3_lyrat/volumeCommand"
       # ensure value is an int, if it is not convertable default to zero
       command_template: "{{ (value)|int(0) }}"
-      state_topic: "memyself/rainSpeaker3/volumeStatus"
+      state_topic: "memyself/rainSpeaker3_lyrat/volumeStatus"
       # value is a string, take the last 4 (or fewer) characters, convert to int with base
       value_template: "{{ (value[:4]|int(base=10)) }}"
       unit_of_measurement: "%"
@@ -22,3 +22,10 @@ mqtt:
         name: "Rain Speaker 3"
         identifiers: "RainSpeaker3"
         manufacturer: "Me Myself"
+
+template:
+  - sensor:
+      - name: Volume
+        unit_of_measurement: "%"
+        state_class: measurement
+        state: "{{ states('number.rain_speaker_3_volume')|int(0) }}"
