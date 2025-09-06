@@ -1,4 +1,4 @@
-#include "Audio.h"
+#include "AudioWithRamp.h"
 
 #include <WiFi.h>
 #include <WebServer.h>
@@ -6,18 +6,24 @@
 
 #define TOPIC_VOLUMESTATUS "volumeStatus"
 #define TOPIC_VOLUMECOMMAND "volumeCommand"
+#define TOPIC_RAMPSTATUS "rampTimeMsStatus"
+#define TOPIC_RAMPCOMMAND "rampTimeMsCommand"
 #define TOPIC_PLAYSTATUS "plabyackStatus"
 #define TOPIC_PLAYCOMMAND "plabyackCommand"
 
 #define VOLUME_STATUS TOPIC_MANUFACTURER "/" TOPIC_DEVICE "/" TOPIC_VOLUMESTATUS
 #define VOLUME_COMMAND TOPIC_MANUFACTURER "/" TOPIC_DEVICE "/" TOPIC_VOLUMECOMMAND
+
+#define RAMP_STATUS TOPIC_MANUFACTURER "/" TOPIC_DEVICE "/" TOPIC_RAMPSTATUS
+#define RAMP_COMMAND TOPIC_MANUFACTURER "/" TOPIC_DEVICE "/" TOPIC_RAMPCOMMAND
+
 #define PLAY_STATUS TOPIC_MANUFACTURER "/" TOPIC_DEVICE "/" TOPIC_PLAYSTATUS
 #define PLAY_COMMAND TOPIC_MANUFACTURER "/" TOPIC_DEVICE "/" TOPIC_PLAYCOMMAND
 
 // TODO: Default volume to 0, wait for server to set it
 // If we never connect to server, eventually set it to 1.
 
-Audio *audio;
+AudioWithRamp *audio;
 
 IPAddress mqtt_server(192, 168, 0, 15);
 
@@ -29,26 +35,16 @@ const char* mqttPass = "h\%D^2f#AQk";
 
 const char* topicVolumeStatus = VOLUME_STATUS;
 const char* topicVolumeCommand = VOLUME_COMMAND;
+const char* topicRampStatus = RAMP_STATUS;
+const char* topicRampCommand = RAMP_COMMAND;
 const char* topicPlaybackStatus = PLAY_STATUS;
 const char* topicPlaybackCommand = PLAY_COMMAND;
 
 WiFiClient espClient;
 PubSubClient client(espClient); //lib required for mqtt
 
-void callback(char* topic, byte* payload, unsigned int length) {
-  Serial.print("Message arrived [");
-  Serial.print(topic);
-  Serial.print("] ");
-  for (int i=0;i<length;i++) {
-    Serial.print((char)payload[i]);
-  }
-  Serial.println();
-
-  char payloadString[20] = {0};
-  for (int i=0;i<length && i<19;i++) {
-    payloadString[i] = (char)payload[i];
-  }
-
+bool callbackVolume(char* topic, char payloadString[20])
+{
   bool setVolumeFlag = false;
 
   if(strcmp(topic, topicVolumeStatus) == 0)
@@ -71,6 +67,57 @@ void callback(char* topic, byte* payload, unsigned int length) {
     Serial.print("Volume is: ");
     Serial.println(volume);
   }
+
+  return setVolumeFlag;
+}
+
+bool callbackRamp(char* topic, char payloadString[20])
+{
+  bool setRampFlag = false;
+
+  if(strcmp(topic, topicRampStatus) == 0)
+  {
+    client.unsubscribe(topicRampStatus);
+    setRampFlag = true;
+  }
+
+  if(strcmp(topic, topicRampCommand) == 0)
+  {
+    client.publish(topicRampStatus, payloadString, true);
+    setRampFlag = true;
+  }
+
+  if(setRampFlag)
+  {
+    int rampTimeMs = atoi(payloadString);
+    audio->setRampTime(rampTimeMs);
+
+    Serial.print("Ramp time is: ");
+    Serial.println(rampTimeMs);
+  }
+
+  return setRampFlag;
+}
+
+void callback(char* topic, byte* payload, unsigned int length) {
+  Serial.print("Message arrived [");
+  Serial.print(topic);
+  Serial.print("] ");
+  for (int i=0;i<length;i++) {
+    Serial.print((char)payload[i]);
+  }
+  Serial.println();
+
+  char payloadString[20] = {0};
+  for (int i=0;i<length && i<19;i++) {
+    payloadString[i] = (char)payload[i];
+  }
+
+  if(callbackVolume(topic, payloadString)) { }
+  else if(callbackRamp(topic, payloadString)) { }
+  else {
+    Serial.println("Unknown topic");
+  }
 }
 
 void reconnect() {
@@ -82,6 +129,8 @@ void reconnect() {
       Serial.println("connected");
       client.subscribe(topicVolumeCommand);
       client.subscribe(topicVolumeStatus);
+      client.subscribe(topicRampCommand);
+      client.subscribe(topicRampStatus);
     } else {
       Serial.print("failed, rc=");
       Serial.print(client.state());
@@ -95,7 +144,7 @@ void reconnect() {
 void setup()
 {
   Serial.begin(115200);
-  audio = new Audio(Serial);
+  audio = new AudioWithRamp(Serial, 0, 2000);
 
   // ---
 
@@ -115,6 +164,10 @@ void setup()
   client.setCallback(callback);
   //delay(5000);
   delay(1500);
+
+  // In case we never connect, default to 50%
+  // But do this _after_ connecting WiFi to avoid a noise blip on reset
+  audio->setVolume(50);
 }
 
 void loop()

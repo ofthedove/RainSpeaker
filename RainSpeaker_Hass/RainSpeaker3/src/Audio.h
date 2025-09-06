@@ -21,6 +21,7 @@ public:
 
    void loop();
    void setVolume(int volume);
+   int getVolume();
 };
 
 #endif

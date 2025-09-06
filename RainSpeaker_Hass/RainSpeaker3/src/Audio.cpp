@@ -78,3 +78,13 @@ void Audio::setVolume(int volume) {
       board.setVolume(volume);
     }
 }
+
+int Audio::getVolume()
+{
+    if(kit->hasBoard())
+    {
+      AudioBoard &board = kit->board();
+      return board.getVolume();
+    }
+    return 0;
+}
