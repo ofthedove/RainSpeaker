@@ -7,6 +7,7 @@ class AudioWithRamp : public Audio {
 public:
     AudioWithRamp(Print& logPrint, int initialVolume = 50, int rampTimeMs = 2000);
     void setRampTime(int timeMs);
+    int getRampTime();
     void setVolume(int volume);
     void loop();
 

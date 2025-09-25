@@ -11,6 +11,10 @@ void AudioWithRamp::setRampTime(int timeMs) {
     rampTimeMs = timeMs;
 }
 
+int AudioWithRamp::getRampTime() {
+    return rampTimeMs;
+}
+
 void AudioWithRamp::setVolume(int volume) {
     if(volume < 0)
     {
